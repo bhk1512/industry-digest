@@ -1,0 +1,385 @@
+{
+  "name": "News and Industry Analysis Mail",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "id": "4ed04f56-1cd8-47d5-b4c1-34cfdb496583",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        1120,
+        720
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "url": "=https://newsapi.org/v2/everything",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "(Kalpataru OR \"Kalpataru Projects International\")   OR (\"L&T\" OR \"Larsen & Toubro\")   OR (KEC OR \"KEC International\")   OR (\"Tata Projects\")   OR (Sterlite OR \"Sterlite Industries\")"
+            },
+            {
+              "name": "searchIn",
+              "value": "title,description,content"
+            },
+            {
+              "name": "from",
+              "value": "={{ $now.minus(7, 'days') }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "$env.INDUSTRY_NEWSAPI_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "444c5afa-9052-4e07-8881-7a0a86ac8a78",
+      "name": "Fetch News Articles",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1680,
+        720
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "content": "## Fetch Latest News Articles\n\n\nThis step pulls up news articles within the last 7 days from NewsAPI for the selected industry or companies.",
+        "height": 416,
+        "width": 416,
+        "color": 7
+      },
+      "id": "900b9b6a-cff5-4438-bf49-3919c9b179d0",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1536,
+        512
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Gemini Business Summary\n\nGPT analyzes the news, summarizes the relevant articles for executive leadership.\n\nIt takes a batch of news articles about industry players and distills them into an actionable briefing. The output includes macro trends, company-specific developments, comparative positioning, risks and opportunities, and strategic recommendations—presented in a clear, non-repetitive format designed for high-impact decision-making.",
+        "height": 496,
+        "width": 416,
+        "color": 7
+      },
+      "id": "5942c7d8-4853-47cd-b529-c91e7427a7e2",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2064,
+        448
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Email the digest\n\n\nSends the industry insights directly to your your selected emails.\nYou can customize the message format or destination channel.\n\n",
+        "height": 400,
+        "width": 384,
+        "color": 7
+      },
+      "id": "e2bc105f-82e8-414b-a2ef-1556ab99934c",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3680,
+        528
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Schedule Trigger\n\nThis controls how often the workflow runs — set it to daily, weekly, or any custom interval you need.\n\nAdjust the schedule settings to match how frequently you want news updates sent to Slack.\n",
+        "height": 416,
+        "width": 416,
+        "color": 7
+      },
+      "id": "bc891826-edfd-4f45-b986-c9bfb86baa44",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        960,
+        528
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a senior strategic advisor at KEC, preparing an executive-level briefing. You have been given a batch of news articles about Kalpataru, L&T, KEC International, Tata Projects and Sterlite. Your task is to synthesize them into high-impact business insights for our top leadership team.\n\nUnderstand and analyse these:\n1. **Market & Industry Trends**  \n   - Macro developments affecting these EPC/infrastructure players  \n   - Regulatory, policy or funding changes\n2. **Company-Specific Highlights**  \n   - For each company, recent wins, setbacks or strategic moves  \n   - Note any M&A, large contracts, partnerships or leadership changes\n3. **Comparative Analysis**  \n   - Side-by-side view of growth catalysts and headwinds  \n   - Relative positioning on project pipeline, geographies and service mix\n4. **Risks & Opportunities**  \n   - Emerging threats (e.g., commodity costs, project delays)  \n   - New opportunities (e.g., green energy, digital solutions)\n\nBasis all this write a 1-page executive briefing. \nAudience: KEC C-suite. \nConstraints: Max 350 words. No full paragraphs — only headline + supporting bullets. \nUse bold numbers, tags [Sector], and flag risks/opportunities with 🔴/🟢. \nOrganize as:\n1. Top 3 Signals this Week (headline + 2 bullets each)\n2. Competitive Positioning Snapshot (leaderboard-style grid)\n3. KEC Implications – 3 priority actions (one line each)\n\nAvoid repetition across sections.\n\nHere is the news data: {{ $json.articles }}\n\nReturn STRICT JSON only (no prose). Follow this exact schema:\n\n{\n  \"top_signals\": [\n    { \"headline\": \"string (≤10 words)\", \"bullets\": [\"string (≤14 words)\", \"string (≤14 words)\"], \"tag\": \"Market|Strategy|Financial|Risk|Opportunity\" }\n  ],\n  \"competitors\": [\n    { \"company\": \"L&T|Sterlite Power|Kalpataru|KEC International|Tata Projects\",\n      \"recent_orders\": \"string like '₹1–2.5K Cr' or 'Multiple'\",\n      \"sectors\": [\"T&D\",\"Railways\",\"Water\",\"B&F\",\"Civil\", \"Green Energy\", \"...\"],\n      \"geo\": \"India|Intl.|India & Intl.\",\n      \"strength\": \"string (≤6 words)\"\n    }\n  ],\n  \"actions\": [\n    { \"text\": \"one-line KEC priority\", \"flag\": \"green|red\" }\n  ]\n}\n\nReturn ONLY valid JSON."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        2128,
+        720
+      ],
+      "id": "9bcc5c6a-1d21-4b39-85e3-c5b70fb62383",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "yuuUDryYiacSOJx3",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": " $env.INDUSTRY_FROM_EMAIL ",
+        "toEmail": "={{ $json.allEmails }}",
+        "subject": "=Weekly Industry Digest",
+        "html": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        3824,
+        704
+      ],
+      "id": "4d3f4921-a292-4d56-b722-ade55728efa7",
+      "name": "Send email",
+      "webhookId": "242abc3f-0b3b-427a-9115-ef69df87b3c3",
+      "credentials": {
+        "smtp": {
+          "id": "rXFEMPG51rlO0X1m",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "203375d0-80bf-4897-b0c2-b06fbde6f666",
+              "name": "allEmails",
+              "value": "={{ $input.all().map(item => item.json.eMails).join(',') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2208,
+        176
+      ],
+      "id": "a47b8acd-ccb2-4395-a8c3-8931b94ba71b",
+      "name": "Edit Fields",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3216,
+        704
+      ],
+      "id": "9c265e72-f91f-4237-b50c-638a834d0c62",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "content": "## Get email list from Google Sheet\n\n",
+        "height": 256,
+        "width": 400,
+        "color": 7
+      },
+      "id": "62ec3230-a84a-47dc-9000-4555cd4b2e2a",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1696,
+        64
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "E-Mail",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KsRxO0Z5DrpqXV6USku1W4uILOIsDXBTG0bVVJplfxw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KsRxO0Z5DrpqXV6USku1W4uILOIsDXBTG0bVVJplfxw/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1840,
+        176
+      ],
+      "id": "e4cea884-0e9e-4dc7-9bb6-068f5bd304b4",
+      "name": "Fetch Emails",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "A6eBd4iZnfcdEr17",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: $input.first().json from Gemini; the string is JSON.\n// Output: item.json.data (HTML string) for the email body.\n\nfunction esc(str){ return String(str||\"\").replace(/[&<>\"]/g, s=>({ \"&\":\"&amp;\",\"<\":\"&lt;\",\">\":\"&gt;\",'\"':\"&quot;\" }[s])); }\n\nreturn [$input.first()].map(i => {\n  const raw = i.json.content?.parts?.[0]?.text ?? i.json.text ?? \"\";\n  let data;\n  try { data = JSON.parse(raw); } catch(e) { data = {top_signals:[], competitors:[], actions:[]}; }\n\n  const signals = (data.top_signals||[]).slice(0,3);\n  const comps   = (data.competitors||[]).slice(0,5);\n  const acts    = (data.actions||[]).slice(0,3);\n\n  // Basic, inline-safe styles for email clients\n  const cssBox = \"border:1px solid #e6e6e6;border-radius:8px;padding:10px;margin:0 0 10px 0;\";\n  const cssH2  = \"font-size:16px;margin:14px 0 8px 0;\";\n  const cssP   = \"margin:0;line-height:1.4;font-size:14px;\";\n  const cssLi  = \"margin:0 0 6px 0;\";\n  const cssTbl = \"border-collapse:collapse;width:100%;font-size:14px;\";\n  const cssTh  = \"text-align:left;border-bottom:1px solid #eee;padding:6px 0;\";\n  const cssTd  = \"padding:6px 0;border-bottom:1px solid #f5f5f5;\";\n\n  // Top 3 Signals\n  const signalsHTML = `\n    <h2 style=\"${cssH2}\">Top 3 Signals this Week</h2>\n    ${signals.map(s => `\n      <div style=\"${cssBox}\">\n        <p style=\"${cssP}\"><b>${esc(s.headline)}</b> ${s.tag ? `<span style=\"color:#666\">[${esc(s.tag)}]</span>` : \"\"}</p>\n        <ul style=\"padding-left:18px;margin:6px 0 0 0;\">\n          ${(s.bullets||[]).slice(0,2).map(b => `<li style=\"${cssLi}\">${esc(b)}</li>`).join(\"\")}\n        </ul>\n      </div>\n    `).join(\"\")}\n  `;\n\n  // Competitive snapshot – slim table for reliability in Outlook/Gmail\n  const compHTML = `\n    <h2 style=\"${cssH2}\">Competitive Positioning Snapshot</h2>\n    <table style=\"${cssTbl}\">\n      <tr>\n        <th style=\"${cssTh}\">Company</th>\n        <th style=\"${cssTh}\">Recent Orders</th>\n        <th style=\"${cssTh}\">Strength</th>\n      </tr>\n      ${comps.map(c => `\n        <tr>\n          <td style=\"${cssTd}\"><b>${esc(c.company)}</b> <span style=\"color:#666\">[${esc((c.sectors||[]).slice(0,2).join(\", \"))} | ${esc(c.geo)}]</span></td>\n          <td style=\"${cssTd}\">${esc(c.recent_orders)}</td>\n          <td style=\"${cssTd}\">${esc(c.strength)}</td>\n        </tr>\n      `).join(\"\")}\n    </table>\n  `;\n\n  // KEC actions with flags\n  const flagIcon = (f) => f===\"red\" ? \"🔴\" : \"🟢\";\n  const actionsHTML = `\n    <h2 style=\"${cssH2}\">KEC Implications – 3 Priority Actions</h2>\n    <ul style=\"padding-left:18px;margin:6px 0 0 0;\">\n      ${acts.map(a => `<li style=\"${cssLi}\">${flagIcon(a.flag)} ${esc(a.text)}</li>`).join(\"\")}\n    </ul>\n  `;\n\n  const wrap = `\n    <div style=\"font-family:Arial,Helvetica,sans-serif;color:#111;max-width:720px;\">\n      ${signalsHTML}\n      ${compHTML}\n      ${actionsHTML}\n    </div>\n  `;\n\n  i.json.data = wrap;       // <- used by Send email node\n  return i;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2720,
+        720
+      ],
+      "id": "a3e4cef6-1f8e-4b53-b224-22efd4fbb099",
+      "name": "Format Data"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch News Articles",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch News Articles": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Format Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send email": {
+      "main": [
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Emails": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Data": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a95777c7-c7cc-4dbc-9932-3655f2524782",
+  "meta": {
+    "templateId": "6273",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "475daac84cac0803a26cc78d72459f365d29a76e384de860efeb8e77b778ad67"
+  },
+  "id": "q1dTj5PKviaJHLlA",
+  "tags": []
+}
